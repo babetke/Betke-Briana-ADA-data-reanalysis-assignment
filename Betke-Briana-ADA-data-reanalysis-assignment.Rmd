@@ -1,0 +1,154 @@
+---
+title: "Data Analysis Replication Assignment"
+author: "Briana Betke"
+date: "04/20/20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = TRUE,
+	message = TRUE,
+	comment = "##",
+	prompt = FALSE,
+	tidy = TRUE,
+	tidy.opts = list(blank = FALSE, width.cutoff = 75),
+	fig.path = "img/",
+	fig.align = "center"
+)
+```
+
+## Introduction
+
+Summary:
+The intention of this paper is to understand the impact of provisioning on the imunne function and infection status of Vampire bats. This was condict with a dataset containing measures the of immune function in 369 bats in peru and belize. The sites selected had varying amount of livestock  
+
+Reanalysis: 
+The analysis that I am attempting to replicate is the generating of candidate models and model averaging used to identify predictors of bat immune profiles. Only the PC1 was provided, not the variables used to do the PCA so I ran the global model using the 
+
+## Visualization of Data
+
+### Read in the necessary packages for data visualization and the rest of the reanalysis.
+```{r message=FALSE}
+library(MuMIn) # for model generation and averaging
+library(tidyverse) # for da tidy data
+library(cowplot) # for da neato graphs
+theme_set(theme_cowplot()) # setting a theme for the graphs
+```
+
+### Get the data and head the first few rows...so I specified three rows
+```{r}
+# Read in the main dataset containig the bat data
+d <- read_csv("data/becker et al_philtransbdata.csv",col_names = TRUE)
+head(d, 3) # only the first few rows
+```
+```{r}
+# Read in the prey isotope dataset, this is just used for recreating the first graph.
+d2 <- read_csv("data/prey_isotopes.csv")
+d2$class <- as.factor(d2$class) # This is for graphing the class in the plots
+head(d2, 3)
+```
+### Visualizing stable isotopes of bats and prey across regions. 
+There were not any summary tables of the variables in the paper or the supplement but there was a figure visualizing the isotopes of bats and cooresponding prey by site so I decided to attempt to replicate this figure. This figure can be located in the supplemenatry material as figure S2.
+
+#### Figure from the supplement:
+<img src="img/fig_S2.png" width="100%"/>
+
+#### My figure:
+
+Beginning by preparing the data. I pulled out all the sites from the bat dataset and the pre dataset. the prey dataset was only provided as a table in the supplement, so I formatted it in exel then saved as a csv to use in the graphs. 
+```{r}
+# Subsetting the sites
+LR <- filter(d, site %in% c("LR1","LR2","LR3","LR4"))
+head(LR, 3)
+
+AM <- filter(d, site %in% c("AM1","AM2","AM3","CA1"))
+head(AM, 3)
+
+OW <- filter(d, site %in% c("OW1","OW2"))
+head(OW, 3)
+
+# Subsetting prey data by site.
+LR_prey <- filter(d2, site %in% c("LR1","LR2","LR3","LR4","Rio Nanay (near Iquitos)"))
+AM_prey <- filter(d2, site %in% c("Puerto Pakuy (near AM1–3)","CA1"))
+OW_prey <- filter(d2, site %in% c("OW2", "Pacbitun (near OW1 & OW2)"))
+```
+
+Then moving on the to the graphing. I tried my best to format the graph in a way that looked even a little bit similar. If this has taught me anything, it is that I need to go over how to handle legends. It was difficult trying to have a common legend of prey type while still having individual level legends.That was the most stressfull part which I ended giving up on. Then I was just trying to get the legends inside their respective plots. Also, not a complete success.So I am apologizing in advance for how the multiplot looks....
+```{r warning = FALSE, fig.width=10}
+# Preparing the plots
+pAM <- ggplot(NULL, aes(y = dn15, x = dc13)) + 
+    geom_point(AM_prey, mapping = aes(shape = class)) +
+    scale_shape_manual(values=c(18,15)) +
+    geom_point(AM, mapping = aes(color = site)) +
+    scale_color_manual(values = c("darkorchid4", "darkorchid3", "darkorchid1", "maroon3")) +
+    theme(axis.line.x = element_blank(),
+          axis.line.y = element_blank(),
+          axis.title.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.text.y = element_blank(),
+          legend.justification=c(0,1), legend.position=c(0,1),
+          legend.text = element_text(size = 6),
+          legend.title=element_text(size=6),
+          panel.background = element_rect(color = 'black', size = 1)) +
+    xlim(-30, -5) +
+    ylim(4, 18)
+
+pLR <- ggplot(NULL, aes(y = dn15, x = dc13)) + 
+  geom_point(LR_prey, mapping = aes(shape = class)) +
+  scale_shape_manual(values=c(18,15,24)) + 
+  geom_point(LR, mapping = aes(color = site)) +
+  scale_color_manual(values = c("forestgreen", "olivedrab", "olivedrab2", "olivedrab1")) +
+  theme(axis.line.x = element_blank(),
+        axis.line.y = element_blank(),
+        legend.justification=c(0,1), legend.position=c(0,1), 
+        legend.text = element_text(size = 6),
+        legend.title=element_text(size=6),
+        panel.background = element_rect(color = 'black', size = 1)) +
+  xlim(-30, -5) +
+  ylim(4, 18)
+
+pOW <- ggplot(NULL, aes(y = dn15, x = dc13)) + 
+  geom_point(OW_prey, mapping = aes(shape = class)) +
+  scale_shape_manual(values=c(18,15,24)) + 
+  geom_point(OW, mapping = aes(color = site)) + 
+  scale_color_manual(values = c("steelblue1", "steelblue4")) +
+  theme(axis.line.x = element_blank(),
+        axis.line.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        legend.justification=c(0,1), legend.position=c(0,1),
+        legend.text = element_text(size = 6),
+        legend.title=element_text(size=6),
+        panel.background = element_rect(color = 'black', size = 1)) +
+        xlim(-30, -5) +
+        ylim(4, 18)
+
+plot_grid(pLR, pAM, pOW, labels = c('A', 'B', 'C'), label_size = 12, nrow = 1, rel_widths = c(1.15,1,1))
+```
+
+## Replications/Reanalysis
+#### Analysis with PC1, generating and selecting candidate models,
+
+[Be sure to explain what replications you are doing and comment your code so that it is easy for a reader to understand. Include in this section relevant tables/figures/values from the original paper for comparison to what you accomplished with your replication.]
+
+Setting up global model
+```{r}
+```
+
+## Summary/Discussion
+- not very successful
+- Had difficulties which I believe were a combiation of not entirely understanding how to set up glmms, not understading how the ID and site were handled for models to run properly.
+- There were several columns of data that were not provided like the prey info, perhaps it is elsewhere and I didnt see it? otherwise, I couldn't even make the same graph. 
+- not all the interactions used for the global model were provided so I definitely could've left some out and I do not have the same candidate models in my top 20 like in table 1. only had 81 models compared to the 86. I did not know what "appropriate interactions meant". 
+- No functions were mentioned but there were a couple of packages. 
+- No mention of what was used for the PERMANOVA. I assumed the vegan package but there was not any info regarding some of the arguments needed for the PERMANOVA. If you were to set up a martix, did I need to set up a dissimilarity matrix? What method? So I had trouble with running the test after creating the matrix of the two isotopes.
+
+## References
+Becker, D. J., Czirják, G. Á., Volokhov, D. V., Bentz, A. B., Carrera, J. E., Camus, M. S., Navara, K. J., Chizhikov, V. E., Fenton, M. B., Simmons, N. B., Recuenco, S. E., Gilbert, A. T., Altizer, S., & Streicker, D. G. (2018). Livestock abundance predicts vampire bat demography, immune profiles and bacterial infection risk. Philosophical transactions of the Royal Society of London. Series B, Biological sciences, 373(1745), 20170089. https://doi.org/10.1098/rstb.2017.0089
+
+
+
+
