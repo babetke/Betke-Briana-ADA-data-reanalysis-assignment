@@ -84,46 +84,6 @@ pOW <- ggplot(NULL, aes(y = dn15, x = dc13)) +
 # then make a multiplot
 plot_grid(pLR, pAM, pOW, labels = c('A', 'B', 'C'), nrow = 1, rel_widths = c(1.20,1,1))
 
-
-# lmer
-d$year <- as.factor(d$year)
-d$livestock <- as.factor(d$livestock)
-d$site <- as.factor(d$site)
-d$ID <- as.factor(d$ID)
-
-global_mod <- lmer(pca1)
-
-mod_isodist <- lmer(idistance ~ livestock + year + (1|ID/site), data = d)
-summary(mod_isodist)
-Anova(mod_isodist)
-
-iso_lm <- lm(idistance ~ livestock + year, data=d)
-predict(iso_lm, newdata = nd, interval = 'confidence')
-
-ranova(mod_isodist)
-summary(aov(idistance ~ livestock, data = d))
-
-nd <- data.frame(livestock = "low", year = "2013")
-nd2 <- data.frame(livestock = "high", year = "2013")
-
-predict(mod_isodist,newdata= nd,re.form=NA,
-        interval = 'confidence')
-predict(mod_isodist, newdata = nd, re.form = NA)
-
-
-mod_isodist2 <- lmer(idistance ~ livestock + year + (1|ID), data = d)
-PI <- predictInterval(merMod = mod_isodist2, newdata = nd, n.sims = 999)
-
-
-d.no_na <- 
-
-
-na.action = "na.fail"
-mod <- lmer(pca1 ~ factor(rep) + year + (1|ID/site), data = d)
-summary(mod)
-Anova(mod)
-
-install.packages("MuMIn")
 library("MuMIn")
 
 d.mod.build <- drop_na(d) %>%
@@ -136,6 +96,8 @@ summary(mod)
 na.action = "na.fail"
 combo3 <- dredge(mod, m.lim = c(1,4), beta = "partial.sd")
 coefTable(combo3) # view the coefficient table
+combo3
+model.avg(combo3)
 mod_avg <- summary(model.avg(combo3), subset = cumsum(weight) <= .95) # summary of the model
 df1 <- as.data.frame(mod_avg$coefmat.full) # save the full model coefficients
 CI <- as.data.frame(confint(mod_avg, full=T)) # get the 95% CI
@@ -149,11 +111,11 @@ total <- total %>% # make the row names into a column called coefficent
 ggplot(data=total[2:12,], aes(x = coefficient, y = Estimate)) + #again, excluding intercept because estimates so much larger
   geom_hline(yintercept = 0, color = "black", linetype="dashed")+ #add dashed line at zero
   geom_errorbar(aes(ymin=`2.5 %`, ymax=`97.5 %`), color="grey", #adj SE
-                width=0, lwd=1) +
-  coord_flip()+ # flipping x and y axes
-  geom_point(size=3, shape = 18)+ ylab("Coefficient")
+                width=0, lwd=10) +
+  #coord_flip()+ # flipping x and y axes
+  geom_point(size=20, shape = "-")+ ylab("Coefficient")
 
-# creating panel B
+# Working towards creating panel B
 summary(lm(pca1 ~ livestock + rep, data=d.mod.build))
 mod_best <- lm(pca1 ~ livestock + rep, data=d.mod.build)
 nd <- data.frame(livestock = "low", rep = "Y")

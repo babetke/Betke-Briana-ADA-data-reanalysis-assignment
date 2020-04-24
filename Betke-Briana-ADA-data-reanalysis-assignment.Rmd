@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 ## Introduction
 
 Summary:
-The intention of this paper is to understand the impact of provisioning on the imunne function and infection status of Vampire bats. This was condicted with a dataset containing measures the of immune function in 369 bats in peru and belize. The sites selected had varying amount of livestock and the immune profiles of bats were compared between high livestock biomass and low livestock biomass. It was found that the bats located in areas with high livestock biomass have more investment in innate immunity compared to adaptive immunity and this was much more noticiable in reproductive bats. 
+The intention of this paper is to understand the impact of provisioning on the imunne function and infection status of Vampire bats. This was condicted with a dataset containing measures the of immune function in 369 bats in peru and belize. The sites selected had varying amount of livestock and the immune profiles of bats were compared between high livestock biomass and low livestock biomass. It was found that the bats located in areas with high livestock biomass have more investment in innate immunity compared to adaptive immunity and this was much more noticiable in reproductive bats.
 
 Reanalysis: 
 The analysis that I am attempting to replicate is the generating of candidate models and model averaging used to identify predictors of bat immune profiles. Only the PC1 was provided, not the variables used to do the PCA so I ran the global model using the PCA 1 that was provided in the dataset as the response variable. 
