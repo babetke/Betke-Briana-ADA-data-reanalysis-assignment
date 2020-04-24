@@ -195,7 +195,7 @@ total <- total %>% # make the row names into a column called coefficent
 This was not a successful reanalysis because:
 
 - Had difficulties which I believe were a combiation of not entirely understanding how to set up glmms, not understading how the ID and site were handled for models to run properly.
-- There were several columns of data that were not provided so I could not do the PCA on my own. The PCAs were provided as single columns (pca1 and pca2). The second PCA was not mentioned or I didn't see it at least.
+- There were several columns of data that were not provided so I could not do the PCA on my own. The PCAs were provided as single columns (pca1 and pca2). The second PCA was not mentioned in the paper or I didn't see it at least.
 - not all the interactions used for the global model were provided so I definitely could've left some out and I do not have the same candidate models in my top 20 like in table 1. only had 81 models compared to the 86. I did not know what all should be included in "appropriate interactions". 
 - No specific functions were mentioned in the paper but there were a couple of packages for the model avearging. So I looked through the 
 - No mention of what was used for the PERMANOVA. I assumed the vegan package but there was not any info regarding some of the arguments needed for the PERMANOVA. If I were to set up a martix, did I need to set up a dissimilarity matrix? What method? So I had trouble with running the test after creating the matrix of the two isotopes, eventually giving up. 
