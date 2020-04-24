@@ -133,31 +133,39 @@ d.mod.build
 mod <- lm(pca1 ~ livestock + idistance + year + age + sex + rep + livestock*sex + rep*sex + livestock*rep 
           + idistance*rep + idistance*sex, data = d.mod.build)
 summary(mod)
+na.action = "na.fail"
 combo3 <- dredge(mod, m.lim = c(1,4), beta = "partial.sd")
-coefTable(combo3)
-print(combo3)
-model.avg(combo3, beta = "partial.sd")
-summary(model.avg(combo3, subset = cumsum(weight) <= .95))
-summary(model.avg(combo3, beta = "partial.sd"))
+coefTable(combo3) # view the coefficient table
+mod_avg <- summary(model.avg(combo3), subset = cumsum(weight) <= .95) # summary of the model
+df1 <- as.data.frame(mod_avg$coefmat.full) # save the full model coefficients
+CI <- as.data.frame(confint(mod_avg, full=T)) # get the 95% CI
 
-mod_avg <- summary(model.avg(combo3, subset = cumsum(weight) <= .95))
+total <- cbind(df1, CI) # bind them together
 
+total <- total %>% # make the row names into a column called coefficent
+  rownames_to_column("coefficient")
 
+# make the plot!
+ggplot(data=total[2:12,], aes(x = coefficient, y = Estimate)) + #again, excluding intercept because estimates so much larger
+  geom_hline(yintercept = 0, color = "black", linetype="dashed")+ #add dashed line at zero
+  geom_errorbar(aes(ymin=`2.5 %`, ymax=`97.5 %`), color="grey", #adj SE
+                width=0, lwd=1) +
+  coord_flip()+ # flipping x and y axes
+  geom_point(size=3, shape = 18)+ ylab("Coefficient")
 
+# creating panel B
+summary(lm(pca1 ~ livestock + rep, data=d.mod.build))
+mod_best <- lm(pca1 ~ livestock + rep, data=d.mod.build)
+nd <- data.frame(livestock = "low", rep = "Y")
+nd2 <- data.frame(livestock = "low", rep = "N")
+nd3 <- data.frame(livestock = "high", rep = "Y")
+nd4 <- data.frame(livestock = "high", rep = "N")
 
+predict(mod_best,newdata= nd, interval = 'confidence')
+predict(mod_best,newdata= nd2, interval = 'confidence')
+predict(mod_best,newdata= nd3, interval = 'confidence')
+predict(mod_best,newdata= nd4, interval = 'confidence')
 
-
-mod_lmer <- lmer(pca1 ~ livestock + idistance + year + age + sex + rep + livestock*sex + rep*sex + livestock*rep + idistance*rep 
-                 + idistance*sex + (1|ID), data = d.mod.build)
-
-mod_lmer2 <- lmer(pca1 ~ livestock + idistance + year + age + sex + rep + livestock*sex + rep*sex + livestock*rep + idistance*rep 
-                 + idistance*sex + (1|site/ID), data = d) 
-
-
-nit <- lm(pca1 ~ livestock + rep, data = d.mod.build)
-summary(nit)
-
-lmer(pca1 ~ livestock + rep + (1|ID/site), data = d.mod.build)
 
 
 

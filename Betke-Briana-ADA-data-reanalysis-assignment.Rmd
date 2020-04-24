@@ -22,14 +22,14 @@ knitr::opts_chunk$set(
 ## Introduction
 
 Summary:
-The intention of this paper is to understand the impact of provisioning on the imunne function and infection status of Vampire bats. This was condict with a dataset containing measures the of immune function in 369 bats in peru and belize. The sites selected had varying amount of livestock  
+The intention of this paper is to understand the impact of provisioning on the imunne function and infection status of Vampire bats. This was condicted with a dataset containing measures the of immune function in 369 bats in peru and belize. The sites selected had varying amount of livestock and the immune profiles of bats were compared between high livestock biomass and low livestock biomass. It was found that the bats located in areas with high livestock biomass have more investment in innate immunity compared to adaptive immunity and this was much more noticiable in reproductive bats. 
 
 Reanalysis: 
-The analysis that I am attempting to replicate is the generating of candidate models and model averaging used to identify predictors of bat immune profiles. Only the PC1 was provided, not the variables used to do the PCA so I ran the global model using the 
+The analysis that I am attempting to replicate is the generating of candidate models and model averaging used to identify predictors of bat immune profiles. Only the PC1 was provided, not the variables used to do the PCA so I ran the global model using the PCA 1 that was provided in the dataset as the response variable. 
 
 ## Visualization of Data
 
-### Read in the necessary packages for data visualization and the rest of the reanalysis.
+#### Read in the necessary packages for data visualization and the rest of the reanalysis.
 ```{r message=FALSE}
 library(MuMIn) # for model generation and averaging
 library(tidyverse) # for da tidy data
@@ -37,7 +37,7 @@ library(cowplot) # for da neato graphs
 theme_set(theme_cowplot()) # setting a theme for the graphs
 ```
 
-### Get the data and head the first few rows...so I specified three rows
+#### Get the data and head the first few rows...so I specified three rows
 ```{r}
 # Read in the main dataset containig the bat data
 d <- read_csv("data/becker et al_philtransbdata.csv",col_names = TRUE)
@@ -130,21 +130,75 @@ plot_grid(pLR, pAM, pOW, labels = c('A', 'B', 'C'), label_size = 12, nrow = 1, r
 ```
 
 ## Replications/Reanalysis
-#### Analysis with PC1, generating and selecting candidate models,
+### Analysis with PC1, generating and averaging models. 
+When setting up the global model, I attempted to use lmer() where ID nested in site was the random effect. However, I kept having issues trying to run the model that way. This was consistent for the other models I attempted to run for the other analysis mentioned in the paper (like when I was trying to replicate figure 2, for example). To remedy this I tried using just ID for the random effect and it still would not run. I am not sure how site and ID variable were handled by the authors for them to be incoporated into the models properly.So for the following section I ran the global model using the lm() with no random effects. The coeffecients may be much different as this is not accounting for resampling of individuals in the dataset. In addition, not all of the interactions used in the original analysis are specified in the paper. My reanalysis will not have the same number of models generated for this reason. 
 
-[Be sure to explain what replications you are doing and comment your code so that it is easy for a reader to understand. Include in this section relevant tables/figures/values from the original paper for comparison to what you accomplished with your replication.]
-
-Setting up global model
+#### Step 1. Setting up global model for model generation and averaging.
 ```{r}
+# The paper mentioned not including rows with NAs so I removed them and selected for the variables needed for this analysis. 
+d.mod.build <- drop_na(d) %>%
+  select(ID, site, livestock, idistance, year, age, sex, rep, pca1)
+d.mod.build
+
+d.mod.build$year <- as.factor(d.mod.build$year)
+d.mod.build$livestock <- as.factor(d.mod.build$livestock)
+
+# Then set up the globa models with all the main effects and as many ineractions as I could think of.
+mod <- lm(pca1 ~ livestock + idistance + year + age + sex + rep + livestock*sex + rep*sex + livestock*rep 
+          + idistance*rep + idistance*sex, data = d.mod.build)
+summary(mod) # summary from the model
+```
+
+#### Step 2. Model generating
+Then I generated models with the dredge funtion in the MuMIn package, indicating that models can only have up to 4 terms as specified in the paper. When viewing the top 20 models, the top model is the livestock and reproduction. At least that part is consistent with the paper..... 
+```{r}
+options(na.action = "na.fail") #needed for the dredge function
+combo3 <- dredge(mod, m.lim = c(1,4), beta = "partial.sd")# model generating.
+head(combo3, 20) # the top 20 models
+```
+
+#### Step 3. Model averaging
+The paper mentions averaging models whose cumulative Akaike weight adds up to 95%. I am not sure if that is actually what I did here but I did try. 
+```{r}
+#summary of the model 
+(mod_avg <- summary(model.avg(combo3), subset = (cumsum(weight) = .95))) 
+```
+
+#### Step 4. Recreating Figure 3 
+After doing the model avearging, the coefficients were plotted and the results from the best fitting model are plotted. The averaged 
+
+#### The figure from the paper:
+<img src="img/fig_3.png" width="100%"/>
+
+#### My recreation: 
+Since it took so long to attempt to figure out what the issue was with the random effects, I only had time to recreate Panel A. I pulled out the the model coefficients from the model averaging summary. Then calvulated the confidence intervals to be used for the error bars. I combine the coefficients and CIs into one data frame. Then graph! The reference group for livestock biomass for them was the low biomass category. For me, it was high biomass.
+```{r}
+df1 <- as.data.frame(mod_avg$coefmat.full) # grab the full model coefficients
+CI <- as.data.frame(confint(mod_avg, full=T)) 
+total <- cbind(df1, CI) # bind them together
+
+total <- total %>% # make the row names into a column called coefficent
+  rownames_to_column("coefficient")
+
+(pAVG <- ggplot(data=total[2:12,], aes(x = coefficient, y = Estimate)) + 
+    geom_hline(yintercept = 0, color = "black", linetype="dashed") + # put line at 0
+    geom_errorbar(aes(ymin =`2.5 %`, ymax =`97.5 %`), color="grey", 
+                  width = 0, lwd = 1) + # add the error bars
+    coord_flip()+ # flipping axes
+    geom_point(size=3, shape = 18)+ ylab(expression(paste(beta," coefficient with immunity PC1"))) + xlab(element_blank()))
+    # plot coefficients
 ```
 
 ## Summary/Discussion
-- not very successful
+
+This was not a successful reanalysis because:
 - Had difficulties which I believe were a combiation of not entirely understanding how to set up glmms, not understading how the ID and site were handled for models to run properly.
-- There were several columns of data that were not provided like the prey info, perhaps it is elsewhere and I didnt see it? otherwise, I couldn't even make the same graph. 
-- not all the interactions used for the global model were provided so I definitely could've left some out and I do not have the same candidate models in my top 20 like in table 1. only had 81 models compared to the 86. I did not know what "appropriate interactions meant". 
-- No functions were mentioned but there were a couple of packages. 
-- No mention of what was used for the PERMANOVA. I assumed the vegan package but there was not any info regarding some of the arguments needed for the PERMANOVA. If you were to set up a martix, did I need to set up a dissimilarity matrix? What method? So I had trouble with running the test after creating the matrix of the two isotopes.
+- There were several columns of data that were not provided so I could not do the PCA on my own. The PCAs were provided as single columns (pca1 and pca2). The second PCA was not mentioned or I didn't see it at least.
+- not all the interactions used for the global model were provided so I definitely could've left some out and I do not have the same candidate models in my top 20 like in table 1. only had 81 models compared to the 86. I did not know what all should be included in "appropriate interactions". 
+- No specific functions were mentioned in the paper but there were a couple of packages for the model avearging. So I looked through the 
+- No mention of what was used for the PERMANOVA. I assumed the vegan package but there was not any info regarding some of the arguments needed for the PERMANOVA. If I were to set up a martix, did I need to set up a dissimilarity matrix? What method? So I had trouble with running the test after creating the matrix of the two isotopes, eventually giving up. 
+
+TL;DR: Reanalysis was not successful and a bit stressful...
 
 ## References
 Becker, D. J., Czirják, G. Á., Volokhov, D. V., Bentz, A. B., Carrera, J. E., Camus, M. S., Navara, K. J., Chizhikov, V. E., Fenton, M. B., Simmons, N. B., Recuenco, S. E., Gilbert, A. T., Altizer, S., & Streicker, D. G. (2018). Livestock abundance predicts vampire bat demography, immune profiles and bacterial infection risk. Philosophical transactions of the Royal Society of London. Series B, Biological sciences, 373(1745), 20170089. https://doi.org/10.1098/rstb.2017.0089
