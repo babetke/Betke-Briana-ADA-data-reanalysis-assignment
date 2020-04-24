@@ -180,6 +180,7 @@ total <- cbind(df1, CI) # bind them together
 total <- total %>% # make the row names into a column called coefficent
   rownames_to_column("coefficient")
 
+# make the ggplot with the data but dont include the intercept
 (pAVG <- ggplot(data=total[2:12,], aes(x = coefficient, y = Estimate)) + 
     geom_hline(yintercept = 0, color = "black", linetype="dashed") + # put line at 0
     geom_errorbar(aes(ymin =`2.5 %`, ymax =`97.5 %`), color="grey", 
@@ -192,6 +193,7 @@ total <- total %>% # make the row names into a column called coefficent
 ## Summary/Discussion
 
 This was not a successful reanalysis because:
+
 - Had difficulties which I believe were a combiation of not entirely understanding how to set up glmms, not understading how the ID and site were handled for models to run properly.
 - There were several columns of data that were not provided so I could not do the PCA on my own. The PCAs were provided as single columns (pca1 and pca2). The second PCA was not mentioned or I didn't see it at least.
 - not all the interactions used for the global model were provided so I definitely could've left some out and I do not have the same candidate models in my top 20 like in table 1. only had 81 models compared to the 86. I did not know what all should be included in "appropriate interactions". 
